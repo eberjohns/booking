@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book a Slot</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/x-icon" href="./favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ============================================================
+       SETUP SCREEN — shown when ?api= param is missing
+  ============================================================ -->
+  <div id="setup-screen" class="screen hidden">
+    <div class="setup-card">
+      <div class="setup-icon">⚙️</div>
+      <h1>Setup Required</h1>
+      <p>This booking page needs to be connected to a Google Sheet via a Google Apps Script Web App URL.</p>
+      <div class="setup-step">
+        <span class="step-num">1</span>
+        <span>Create a Google Sheet and add your time slots.</span>
+      </div>
+      <div class="setup-step">
+        <span class="step-num">2</span>
+        <span>Open the Apps Script editor and paste the provided <code>Code.gs</code>.</span>
+      </div>
+      <div class="setup-step">
+        <span class="step-num">3</span>
+        <span>Deploy as a Web App and copy the URL.</span>
+      </div>
+      <div class="setup-step">
+        <span class="step-num">4</span>
+        <span>Share the booking link in the format below:</span>
+      </div>
+      <div class="setup-url-example">
+        https://yourwebsite.com/?api=YOUR_APPS_SCRIPT_URL
+      </div>
+      <p class="setup-note">See the included <strong>README.md</strong> for detailed instructions.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MAIN APP
+  ============================================================ -->
+  <div id="app" class="hidden">
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="header-brand">
+          <span class="brand-dot"></span>
+          <span class="brand-text">Book a Slot</span>
+        </div>
+        <div id="already-booked-badge" class="booked-badge hidden">
+          ✓ You have a booking
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-inner">
+        <p class="hero-eyebrow">Schedule</p>
+        <h1 class="hero-title">Choose your<br /><em>time slot</em></h1>
+        <p class="hero-sub">Select a date below, then pick an available time.</p>
+      </div>
+      <div class="hero-orb"></div>
+    </section>
+
+    <!-- Already-booked banner -->
+    <div id="booked-banner" class="booked-banner hidden">
+      <div class="booked-banner-inner">
+        <span class="booked-icon">✓</span>
+        <div>
+          <strong>You have a booking!</strong>
+          <span id="booked-detail"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <main class="main-content">
+
+      <!-- Skeleton loading state -->
+      <div id="loading-state" class="loading-state">
+        <!-- Date tab skeletons -->
+        <div class="skel-section-label"></div>
+        <div class="skel-tabs">
+          <div class="skel-tab skel-tab--wide"></div>
+          <div class="skel-tab"></div>
+          <div class="skel-tab skel-tab--wide"></div>
+          <div class="skel-tab skel-tab--narrow"></div>
+        </div>
+        <!-- Slot card skeletons -->
+        <div class="skel-section-label skel-section-label--second"></div>
+        <div class="skel-grid">
+          <div class="skel-card skel-card--open"></div>
+          <div class="skel-card skel-card--taken"></div>
+          <div class="skel-card skel-card--open"></div>
+          <div class="skel-card skel-card--open"></div>
+          <div class="skel-card skel-card--taken"></div>
+          <div class="skel-card skel-card--open"></div>
+        </div>
+      </div>
+
+      <!-- Error state -->
+      <div id="error-state" class="error-state hidden">
+        <div class="error-icon">⚠</div>
+        <h2 id="error-title">Something went wrong</h2>
+        <p id="error-message"></p>
+        <button id="retry-btn" class="btn-primary">Try Again</button>
+      </div>
+
+      <!-- Booking UI -->
+      <div id="booking-ui" class="hidden">
+
+        <!-- Date tabs -->
+        <section class="dates-section">
+          <h2 class="section-label">Select a date</h2>
+          <div id="date-tabs" class="date-tabs" role="tablist"></div>
+        </section>
+
+        <!-- Slots grid -->
+        <section class="slots-section">
+          <div class="slots-header">
+            <h2 class="section-label">Available times</h2>
+            <div class="legend">
+              <span class="legend-item"><span class="legend-dot open"></span>Available</span>
+              <span class="legend-item"><span class="legend-dot taken"></span>Taken</span>
+              <span class="legend-item"><span class="legend-dot mine"></span>Your booking</span>
+            </div>
+          </div>
+          <div id="slots-grid" class="slots-grid"></div>
+          <p id="no-slots-msg" class="no-slots-msg hidden">No time slots available for this date.</p>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>Made by <a href="https://github.com/eberjohns" target="_blank" rel="noopener">ME</a></p>
+    </footer>
+  </div>
+
+  <!-- ============================================================
+       BOOKING MODAL
+  ============================================================ -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <button id="modal-close" class="modal-close" aria-label="Close">&times;</button>
+      <div class="modal-header">
+        <p class="modal-eyebrow" id="modal-date-label"></p>
+        <h2 id="modal-title" class="modal-title">Confirm your booking</h2>
+        <p class="modal-slot-time" id="modal-slot-time"></p>
+      </div>
+      <div id="modal-form-fields" class="modal-form-fields"></div>
+      <div id="modal-error" class="modal-error hidden"></div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn-ghost">Cancel</button>
+        <button id="modal-submit" class="btn-primary">
+          <span id="modal-submit-text">Confirm Booking</span>
+          <span id="modal-submit-spinner" class="btn-spinner hidden"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       ANNOUNCEMENT OVERLAY — big centered message for success + conflict
+  ============================================================ -->
+  <div id="announce-overlay" class="announce-overlay hidden" role="alertdialog" aria-modal="true">
+    <div id="announce-card" class="announce-card">
+      <div id="announce-icon" class="announce-icon"></div>
+      <h2 id="announce-title" class="announce-title"></h2>
+      <p id="announce-body" class="announce-body"></p>
+      <button id="announce-btn" class="btn-primary announce-btn">OK</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
