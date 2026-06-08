@@ -61,6 +61,7 @@ const el = {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  bindSetupEvents();  // Always bind setup events
   apiUrl = readApiParam();
   if (!apiUrl) { show(el.setupScreen); return; }
 
@@ -438,4 +439,108 @@ function bindEvents() {
       submitBooking();
     }
   });
+}
+
+function bindSetupEvents() {
+  loadCodeGsFile();
+  
+  const copyCodeBtn = document.getElementById('copy-code-btn');
+  const webappUrlInput = document.getElementById('webapp-url-input');
+  const finalBookingLink = document.getElementById('final-booking-link');
+
+  if (copyCodeBtn) {
+    copyCodeBtn.addEventListener('click', copyCodeToClipboard);
+  }
+
+  if (webappUrlInput) {
+    webappUrlInput.addEventListener('input', (e) => {
+      const webappUrl = e.target.value.trim();
+      if (webappUrl) {
+        const bookingLink = 'https://eberjohns.github.io/booking/?api=' + encodeURIComponent(webappUrl);
+        finalBookingLink.textContent = bookingLink;
+      } else {
+        finalBookingLink.textContent = 'https://eberjohns.github.io/booking/?api=YOUR_APPS_SCRIPT_URL';
+      }
+    });
+  }
+}
+
+function loadCodeGsFile() {
+  const codeContent = document.querySelector('#code-gs-content code');
+  const codeLoading = document.getElementById('code-loading');
+  const codePre = document.getElementById('code-gs-content');
+
+  // Try to fetch Code.gs file
+  fetch('./Code.gs')
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to load Code.gs');
+      return response.text();
+    })
+    .then(code => {
+      // Hide loading state
+      if (codeLoading) codeLoading.classList.add('hidden');
+      
+      // Set code content
+      codeContent.textContent = code;
+      
+      // Show code block
+      codePre.classList.remove('hidden');
+    })
+    .catch(error => {
+      console.error('Error loading Code.gs:', error);
+      if (codeLoading) {
+        codeLoading.textContent = 'Error loading Code.gs. Please refresh the page.';
+      }
+    });
+}
+
+function copyCodeToClipboard() {
+  const codeElement = document.querySelector('#code-gs-content code');
+  if (!codeElement || !codeElement.textContent.trim()) {
+    alert('Code is still loading. Please wait a moment and try again.');
+    return;
+  }
+
+  const text = codeElement.textContent;
+  
+  // Use the Clipboard API if available
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showCopySuccess();
+    }).catch(() => {
+      fallbackCopyToClipboard(text);
+    });
+  } else {
+    fallbackCopyToClipboard(text);
+  }
+}
+
+function fallbackCopyToClipboard(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    showCopySuccess();
+  } catch (err) {
+    console.error('Failed to copy:', err);
+  }
+  document.body.removeChild(textarea);
+}
+
+function showCopySuccess() {
+  const copyBtn = document.getElementById('copy-code-btn');
+  if (!copyBtn) return;
+
+  const originalText = copyBtn.textContent;
+  copyBtn.textContent = '✓ Copied!';
+  copyBtn.style.background = 'var(--open)';
+
+  setTimeout(() => {
+    copyBtn.textContent = originalText;
+    copyBtn.style.background = '';
+  }, 2000);
 }

@@ -16,30 +16,116 @@
        SETUP SCREEN — shown when ?api= param is missing
   ============================================================ -->
   <div id="setup-screen" class="screen hidden">
-    <div class="setup-card">
-      <div class="setup-icon">⚙️</div>
-      <h1>Setup Required</h1>
-      <p>This booking page needs to be connected to a Google Sheet via a Google Apps Script Web App URL.</p>
-      <div class="setup-step">
-        <span class="step-num">1</span>
-        <span>Create a Google Sheet and add your time slots.</span>
+    <div class="setup-container">
+      <div class="setup-card">
+        <div class="setup-icon">⚙️</div>
+        <h1>Setup Required</h1>
+        <p>This booking page needs to be connected to a Google Sheet via a Google Apps Script Web App URL.</p>
+        
+        <!-- STEP 1: Create Google Sheet -->
+        <div class="setup-section">
+          <h2 class="setup-section-title">Step 1: Create a Google Sheet</h2>
+          <ol class="setup-instructions">
+            <li>Go to <a href="https://sheets.google.com" target="_blank" rel="noopener">Google Sheets</a> and create a new spreadsheet</li>
+            <li>Create separate tabs for each date/service (e.g., "June 10", "Tuesday", "Services", etc.)</li>
+            <li>In each tab, set up the columns:
+              <ul>
+                <li><strong>Column A:</strong> Time (e.g., "09:00 AM", "10:00 AM", etc.)</li>
+                <li><strong>Column B:</strong> Status (set to "open" for available slots, "close" for blocked times)</li>
+                <li><strong>Column C+:</strong> Booking fields (e.g., Name, Phone, Email, etc.)</li>
+              </ul>
+            </li>
+            <li>Example:
+              <div class="sheet-example">
+                <table class="example-table">
+                  <tr>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                  </tr>
+                  <tr>
+                    <td>09:00 AM</td>
+                    <td>open</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>10:00 AM</td>
+                    <td>close</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                </table>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <!-- STEP 2: Add Code.gs -->
+        <div class="setup-section">
+          <h2 class="setup-section-title">Step 2: Deploy Google Apps Script</h2>
+          <ol class="setup-instructions">
+            <li>In your Google Sheet, go to <strong>Tools → Apps Script</strong></li>
+            <li>You'll see <code class="inline-code">Code.gs</code> file. Delete the default content and paste this code:
+              <div class="code-block-container">
+                <div class="code-block-header">
+                  <span>Code.gs</span>
+                  <button id="copy-code-btn" class="copy-btn">📋 Copy Code</button>
+                </div>
+                <div id="code-loading" class="code-loading">Loading Code.gs...</div>
+                <pre id="code-gs-content" class="code-block hidden"><code></code></pre>
+              </div>
+            </li>
+            <li>Save the script (Ctrl+S)</li>
+          </ol>
+        </div>
+
+        <!-- STEP 3: Deploy as Web App -->
+        <div class="setup-section">
+          <h2 class="setup-section-title">Step 3: Deploy as Web App</h2>
+          <ol class="setup-instructions">
+            <li>Click <strong>Deploy</strong> in the top right</li>
+            <li>Select <strong>New Deployment</strong></li>
+            <li>In the "Select type" dropdown, choose <strong>Web app</strong></li>
+            <li>Set the deployment settings:
+              <ul>
+                <li><strong>Execute as:</strong> Me</li>
+                <li><strong>Who has access:</strong> Anyone</li>
+              </ul>
+            </li>
+            <li>Click <strong>Deploy</strong></li>
+            <li>You'll see a popup with your webapp URL (looks like: <code class="inline-code">https://script.google.com/
+              macros/d/YOUR_SCRIPT_ID/exec</code>)</li>
+            <li><strong>Copy the Web App URL</strong> (you'll need this in the next step)</li>
+          </ol>
+        </div>
+
+        <!-- STEP 4: Use the Booking Link -->
+        <div class="setup-section">
+          <h2 class="setup-section-title">Step 4: Create Your Booking Link</h2>
+          <ol class="setup-instructions">
+            <li>Paste your Apps Script URL from Step 3 into the link below:</li>
+            <div class="setup-url-builder">
+              <div class="url-prefix">https://eberjohns.github.io/booking/?api=</div>
+              <input type="text" id="webapp-url-input" class="webapp-url-input" placeholder="Paste your Web App URL here" />
+            </div>
+            <li>Your booking link:
+              <div class="setup-url-example" id="final-booking-link">
+                https://eberjohns.github.io/booking/?api=YOUR_APPS_SCRIPT_URL
+              </div>
+            </li>
+            <li>Copy and share this link with your customers!</li>
+          </ol>
+        </div>
+
+        <div class="setup-note">
+          <strong>💡 Tip:</strong> You can set the Status column to "close" to block time slots during breaks or lunch times. The booking system will not allow bookings on "close" slots.
+        </div>
       </div>
-      <div class="setup-step">
-        <span class="step-num">2</span>
-        <span>Open the Apps Script editor and paste the provided <code>Code.gs</code>.</span>
-      </div>
-      <div class="setup-step">
-        <span class="step-num">3</span>
-        <span>Deploy as a Web App and copy the URL.</span>
-      </div>
-      <div class="setup-step">
-        <span class="step-num">4</span>
-        <span>Share the booking link in the format below:</span>
-      </div>
-      <div class="setup-url-example">
-        https://yourwebsite.com/?api=YOUR_APPS_SCRIPT_URL
-      </div>
-      <p class="setup-note">See the included <strong>README.md</strong> for detailed instructions.</p>
     </div>
   </div>
 

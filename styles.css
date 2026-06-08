@@ -144,6 +144,311 @@ code {
   font-family: monospace;
 }
 
+.inline-code {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.85em;
+  font-family: monospace;
+  color: var(--text);
+}
+
+/* ============================================================
+   SETUP SCREEN EXPANDED
+   ============================================================ */
+.setup-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  width: 100%;
+}
+
+.setup-card {
+  max-width: 780px !important;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: calc(100% - 32px);
+}
+
+/* Responsive adjustments for setup screen */
+@media (max-width: 900px) {
+  .setup-card {
+    padding: 36px 28px;
+    border-radius: 16px;
+  }
+
+  .setup-section {
+    margin-top: 26px;
+    padding-top: 24px;
+  }
+
+  .setup-section-title {
+    font-size: 1.2rem;
+  }
+
+  .code-block {
+    max-height: 320px;
+  }
+}
+
+@media (max-width: 640px) {
+  #setup-screen, .setup-container {
+    padding: 18px;
+    align-items: flex-start;
+  }
+
+  .setup-card {
+    padding: 20px 16px;
+    border-radius: 12px;
+    max-width: 100%;
+    width: 100%;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Remove decorative orb on small screens to avoid causing overflow */
+  .hero-orb { display: none; }
+
+  .setup-icon { font-size: 40px; margin-bottom: 14px; }
+
+  .setup-card h1 { font-size: 1.5rem; }
+
+  .setup-card > p { margin-bottom: 18px; font-size: 0.95rem; }
+
+  .setup-section-title { font-size: 1.05rem; }
+
+  .setup-instructions { margin-left: 14px; }
+
+  .code-block-header { padding: 8px 10px; font-size: 0.8rem; }
+
+  .code-loading, .code-block { padding: 10px; font-size: 0.75rem; }
+
+  .setup-url-builder { flex-direction: column; align-items: stretch; gap: 8px; }
+
+  .url-prefix { white-space: normal; font-size: 0.75rem; }
+
+  .webapp-url-input { padding: 8px 6px; font-size: 0.78rem; }
+
+  .sheet-example { padding: 12px; }
+
+  .example-table th, .example-table td { padding: 6px; }
+
+  .setup-card { text-align: left; }
+  .setup-note { margin-top: 12px; }
+}
+
+/* Small tweak for very narrow screens */
+@media (max-width: 380px) {
+  .setup-card { padding: 14px 12px; }
+  .setup-card h1 { font-size: 1.25rem; }
+  .setup-section-title { font-size: 1rem; }
+}
+
+.setup-section {
+  text-align: left;
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+
+.setup-section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.setup-section-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.setup-instructions {
+  list-style: decimal;
+  margin-left: 20px;
+  color: var(--text-mid);
+}
+
+.setup-instructions li {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.setup-instructions ul {
+  list-style: disc;
+  margin-left: 20px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.setup-instructions ul li {
+  margin-bottom: 6px;
+}
+
+.setup-instructions strong {
+  color: var(--text);
+}
+
+/* Sheet example table */
+.sheet-example {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.example-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.example-table th {
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  padding: 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.example-table td {
+  border: 1px solid var(--border);
+  padding: 8px;
+  background: var(--bg-card);
+}
+
+/* Code block */
+.code-block-container {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin: 12px 0;
+  overflow: hidden;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--accent-light);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.code-block {
+  background: #F5F3F0;
+  padding: 16px;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 400px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.code-block code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.75rem;
+  font-family: 'Courier New', monospace;
+  color: var(--text);
+}
+
+.code-loading {
+  background: #F5F3F0;
+  padding: 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  text-align: center;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.copy-btn:hover {
+  background: var(--accent-hover);
+}
+
+.copy-btn:active {
+  transform: scale(0.98);
+}
+
+/* URL builder */
+.setup-url-builder {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  margin: 12px 0;
+}
+
+.url-prefix {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-mid);
+  white-space: nowrap;
+}
+
+.webapp-url-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: monospace;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  outline: none;
+  color: var(--text);
+}
+
+/* Ensure flex children can shrink on very small screens to avoid horizontal overflow */
+.setup-url-builder, .url-prefix, .webapp-url-input { min-width: 0; }
+
+/* Constrain large content elements to viewport */
+.sheet-example, .code-block, .example-table, pre { max-width: 100%; }
+
+/* Avoid accidental horizontal overflow from wide hero element */
+.hero-orb { right: -40px; max-width: 300px; max-height: 300px; }
+
+/* Extra safeguard: allow the page to scroll vertically but not horizontally */
+html, body { overflow-x: hidden; }
+
+.webapp-url-input::placeholder {
+  color: var(--text-light);
+}
+
+#final-booking-link {
+  margin-top: 8px !important;
+}
+
 /* ============================================================
    HEADER
    ============================================================ */
