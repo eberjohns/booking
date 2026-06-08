@@ -41,6 +41,7 @@ const el = {
   bookedBanner : document.getElementById('booked-banner'),
   bookedDetail : document.getElementById('booked-detail'),
   bookedBadge  : document.getElementById('already-booked-badge'),
+  bookedAddCal  : document.getElementById('booked-addcal'),
   modalOverlay : document.getElementById('modal-overlay'),
   modalClose   : document.getElementById('modal-close'),
   modalCancel  : document.getElementById('modal-cancel'),
@@ -57,6 +58,7 @@ const el = {
   announceTitle  : document.getElementById('announce-title'),
   announceBody   : document.getElementById('announce-body'),
   announceBtn    : document.getElementById('announce-btn'),
+  announceAddCal  : document.getElementById('announce-addcal'),
 };
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
@@ -259,9 +261,39 @@ function renderBanner() {
     el.bookedDetail.textContent = ' — ' + myBooking.date + ', ' + myBooking.time;
     show(el.bookedBanner);
     show(el.bookedBadge);
+    if (el.bookedAddCal) {
+      el.bookedAddCal.style.display = '';
+      el.bookedAddCal.onclick = () => {
+        addCalendarFromBooking();
+      };
+    }
   } else {
     hide(el.bookedBanner);
     hide(el.bookedBadge);
+    if (el.bookedAddCal) {
+      el.bookedAddCal.style.display = 'none';
+      el.bookedAddCal.onclick = null;
+    }
+  }
+}
+
+function addCalendarFromBooking() {
+  if (!myBooking) return alert('No booking found');
+  const startDate = parseDateTime(myBooking.date, myBooking.time);
+  const endDate = new Date(startDate.getTime() + 60*60*1000);
+  const eventObj = {
+    title: 'Booking: ' + (extraHeaders[0] || 'Appointment'),
+    description: 'Booked via booking page',
+    location: '',
+    startDate,
+    endDate,
+  };
+  const ok = confirm('Open Google Calendar? OK to open Google Calendar, Cancel to download .ics');
+  if (ok) {
+    window.open(googleCalendarUrl(eventObj), '_blank');
+  } else {
+    const ics = generateICS(eventObj);
+    downloadICS(ics, 'booking-event.ics');
   }
 }
 
@@ -352,10 +384,22 @@ async function submitBooking() {
         row   : pendingSlot.row,
         time  : pendingSlot.time,
       });
-      closeModal();
-      // Immediately fetch fresh data so the UI reflects the actual sheet state
-      await poll(true);
-      announce('success', '✓', "You're booked!", 'Your slot for ' + pendingSlot.time + ' on ' + activeDate + ' is confirmed.');
+        // Prepare calendar event data
+        const startDate = parseDateTime(activeDate, pendingSlot.time);
+        const endDate = new Date(startDate.getTime() + 60*60*1000); // default 1 hour
+        const eventObj = {
+          title: 'Booking: ' + (extraHeaders[0] || 'Appointment'),
+          description: 'Booked via booking page',
+          location: '',
+          startDate,
+          endDate,
+        };
+
+        closeModal();
+        // Immediately fetch fresh data so the UI reflects the actual sheet state
+        await poll(true);
+        announce('success', '✓', "You're booked!", 'Your slot for ' + pendingSlot.time + ' on ' + activeDate + ' is confirmed.', eventObj);
+          console.log('submitBooking: announce called with eventObj=', eventObj);
     }
 
   } catch (err) {
@@ -390,11 +434,158 @@ function showModalErr(msg) {
 
 // ─── Announcement overlay ─────────────────────────────────────────────────────
 // type: 'success' | 'error'
-function announce(type, icon, title, body) {
+// Calendar helpers
+function convertTimeTo24(timeStr) {
+  // returns HH:MM:SS
+  if (!timeStr) return '00:00:00';
+  // if a range like '09:30 AM - 10:00 AM', take the start
+  if (/[\-–—]/.test(timeStr)) timeStr = timeStr.split(/[\-–—]/)[0].trim();
+  const m = timeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+  if (m) {
+    let hh = parseInt(m[1], 10);
+    const mm = m[2];
+    const ss = m[3] || '00';
+    const ampm = m[4];
+    if (ampm) {
+      if (/pm/i.test(ampm) && hh !== 12) hh = hh + 12;
+      if (/am/i.test(ampm) && hh === 12) hh = 0;
+    }
+    return String(hh).padStart(2,'0') + ':' + mm + ':' + ss;
+  }
+  // fallback: if plain hour like '9 AM'
+  const m2 = timeStr.match(/(\d{1,2})\s*(AM|PM)/i);
+  if (m2) {
+    let hh = parseInt(m2[1],10);
+    const ampm = m2[2];
+    if (/pm/i.test(ampm) && hh !== 12) hh = hh + 12;
+    if (/am/i.test(ampm) && hh === 12) hh = 0;
+    return String(hh).padStart(2,'0') + ':00:00';
+  }
+  // 24h simple
+  const m3 = timeStr.match(/(\d{1,2}):(\d{2})/);
+  if (m3) return String(m3[1]).padStart(2,'0') + ':' + m3[2] + ':00';
+  return '00:00:00';
+}
+
+function parseDateTime(dateStr, timeStr) {
+  // Try if dateStr already ISO
+  let datePart = String(dateStr||'').trim();
+  let timeInput = String(timeStr||'').trim();
+  // If time is a range like '09:30 AM - 10:00 AM', use the start
+  if (/[\-–—]/.test(timeInput)) timeInput = timeInput.split(/[\-–—]/)[0].trim();
+  // If date lacks a 4-digit year, append the current year
+  if (!/\b\d{4}\b/.test(datePart)) {
+    const curYear = new Date().getFullYear();
+    datePart = datePart.replace(/,?\s*$/, '') + ' ' + curYear;
+  }
+  // If date looks like 'YYYY-MM-DD' keep it
+  const isoCandidate = datePart.match(/^\d{4}-\d{2}-\d{2}/);
+  const timePart = convertTimeTo24(timeInput);
+  if (isoCandidate) {
+    // YYYY-MM-DD
+    return new Date(datePart + 'T' + timePart);
+  }
+  // Try combined parse
+  const parsed = new Date(datePart + ' ' + timeInput);
+  if (!isNaN(parsed.getTime())) return parsed;
+  // Try parsing by splitting common formats like 'June 8, 2026'
+  const d = new Date(datePart + ' ' + timePart);
+  if (!isNaN(d.getTime())) return d;
+  // Fallback: now
+  return new Date();
+}
+
+function formatForGCal(date) {
+  // Use local (floating) timestamp WITHOUT trailing Z so Google treats it as local time
+  const Y = date.getFullYear();
+  const M = String(date.getMonth() + 1).padStart(2, '0');
+  const D = String(date.getDate()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  const s = String(date.getSeconds()).padStart(2, '0');
+  return `${Y}${M}${D}T${h}${m}${s}`;
+}
+
+function googleCalendarUrl({title, description, location, startDate, endDate}) {
+  const dates = `${formatForGCal(startDate)}/${formatForGCal(endDate)}`;
+  return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dates}&details=${encodeURIComponent(description||'')}&location=${encodeURIComponent(location||'')}&sf=true&output=xml`;
+}
+
+function uid() { return Date.now() + '-' + Math.random().toString(36).slice(2); }
+
+function toICSTimestamp(date) {
+  const u = new Date(date.getTime() - date.getTimezoneOffset()*60000);
+  return u.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+}
+
+function escapeICSText(s='') {
+  return String(s).replace(/\\n/g,'\\n').replace(/,/g,'\\,');
+}
+
+function generateICS({title, description, location, startDate, endDate}) {
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//BookingApp//EN',
+    'BEGIN:VEVENT',
+    `UID:${uid()}`,
+    `DTSTAMP:${toICSTimestamp(new Date())}`,
+    `DTSTART:${toICSTimestamp(startDate)}`,
+    `DTEND:${toICSTimestamp(endDate)}`,
+    `SUMMARY:${escapeICSText(title)}`,
+    `DESCRIPTION:${escapeICSText(description||'')}`,
+    `LOCATION:${escapeICSText(location||'')}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+  return ics;
+}
+
+function downloadICS(icsContent, filename='event.ics') {
+  const blob = new Blob([icsContent], {type: 'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function announce(type, icon, title, body, eventObj) {
   el.announceCard.className = 'announce-card ' + type;
   el.announceIcon.textContent  = icon;
   el.announceTitle.textContent = title;
   el.announceBody.textContent  = body;
+
+  // Wire buttons
+  el.announceBtn.onclick = () => {
+    hide(el.announceOverlay);
+    hide(el.announceAddCal);
+  };
+
+  if (eventObj && type === 'success') {
+    // show add-to-calendar button and attach handler
+    show(el.announceAddCal);
+    if (el.announceAddCal) el.announceAddCal.style.display = '';
+    el.announceAddCal.onclick = () => {
+      const ok = confirm('Open Google Calendar? Click OK to open Google Calendar, Cancel to download an .ics file to open in your calendar app.');
+      if (ok) {
+        window.open(googleCalendarUrl(eventObj), '_blank');
+      } else {
+        const ics = generateICS(eventObj);
+        downloadICS(ics, 'booking-event.ics');
+      }
+    };
+  } else {
+    hide(el.announceAddCal);
+    if (el.announceAddCal) el.announceAddCal.style.display = 'none';
+    el.announceAddCal.onclick = null;
+  }
+
+  console.log('announce:', {type, title, body, hasEvent: !!eventObj, addCalEl: el.announceAddCal});
+
   show(el.announceOverlay);
   el.announceBtn.focus();
 }
